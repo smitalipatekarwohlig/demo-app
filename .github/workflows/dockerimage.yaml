@@ -13,10 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-       - name: Login to Docker Hub
-         run:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Login to Docker Hub
+      uses:
+        username: smitalipatekar
+        password: Patekar@12
     
     - name: Build the Docker image
       run: docker build -t smitalipatekar/nodeappdemo .
