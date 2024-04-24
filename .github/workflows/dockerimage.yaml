@@ -12,6 +12,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+
+       - name: Login to Docker Hub
+         run:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
     
     - name: Build the Docker image
       run: docker build -t smitalipatekar/nodeappdemo .
