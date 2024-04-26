@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata: 
+  name: nodeapp-service
+  namespace: {{ .Values.namspace }}
+spec:
+  selector:
+    app: nodeappdemo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
