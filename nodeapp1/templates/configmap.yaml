@@ -4,4 +4,4 @@ metadata:
   name: {{ .Values.configmap.name }}
   namespace: {{ .Values.namspace }}
 data:
-  URL: {{ .Values.configmap.data.URL }}
+  URL: {{ .Values.configmap.data.URL | quote }}
