@@ -27,32 +27,32 @@ jobs:
       #     password: ${{ secrets.DOCKER_PASSWORD }}
 
       # Authenticate to Google Cloud using workload identity federation
-      - id: "auth"
-        name: "Obtain access token by using workload identity federation"
-        uses: "google-github-actions/auth@v2"
-        with:
-          create_credentials_file: true
-          token_format: access_token
-          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/demo-identity-pool/providers/github-actions
-          service_account: github-actions@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+      # - id: "auth"
+      #   name: "Obtain access token by using workload identity federation"
+      #   uses: "google-github-actions/auth@v2"
+      #   with:
+      #     create_credentials_file: true
+      #     token_format: access_token
+      #     workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/demo-identity-pool/providers/github-actions
+      #     service_account: github-actions@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
-      - name: Connect to Artifact Registry
-        run: echo ${{ steps.auth.outputs.access_token }} | docker login -u oauth2accesstoken --password-stdin ${{secrets.GCP_GAR_HOST}}
+      # - name: Connect to Artifact Registry
+      #   run: echo ${{ steps.auth.outputs.access_token }} | docker login -u oauth2accesstoken --password-stdin ${{secrets.GCP_GAR_HOST}}
 
-      - name: Build the Docker image
-        run: docker build -t ${{secrets.GCP_GAR_HOST}}/${{ secrets.GCP_PROJECT_ID }}/${{secrets.GCP_REPO}}/smitalipatekar/nodeappdemo:$GITHUB_REF_NAME-$GITHUB_SHA .
+      # - name: Build the Docker image
+      #   run: docker build -t ${{secrets.GCP_GAR_HOST}}/${{ secrets.GCP_PROJECT_ID }}/${{secrets.GCP_REPO}}/smitalipatekar/nodeappdemo:$GITHUB_REF_NAME-$GITHUB_SHA .
 
-      - name: Push the Docker image to Docker Hub
-        run: docker push ${{secrets.GCP_GAR_HOST}}/${{ secrets.GCP_PROJECT_ID }}/${{secrets.GCP_REPO}}/smitalipatekar/nodeappdemo:$GITHUB_REF_NAME-$GITHUB_SHA
+      # - name: Push the Docker image to Docker Hub
+      #   run: docker push ${{secrets.GCP_GAR_HOST}}/${{ secrets.GCP_PROJECT_ID }}/${{secrets.GCP_REPO}}/smitalipatekar/nodeappdemo:$GITHUB_REF_NAME-$GITHUB_SHA
 
-      - name: Update deployment file in Gitops repository
-        run: |
-          git clone https://${{ secrets.GCP_GITHUB_USERNAME }}:${{ secrets.GCP_GITHUB_TOKEN }}@github.com/smitalipatekarwohlig/gitops.git 
-          cd gitops
-          git checkout main
-          git config --global user.name ${{secrets.GCP_GITHUB_USERNAME}}
-          git config --global user.email ${{secrets.GCP_GITHUB_EMAIL}}
-          yq e '.spec.template.spec.containers[0].image = "smitalipatekar/nodeappdemo:${{ env.GITHUB_BRANCH }}"' -i deployment.yaml
-          git add .
-          git commit -m "updating newer image"
-          git push origin main
+      # - name: Update deployment file in Gitops repository
+      #   run: |
+      #     git clone https://${{ secrets.GCP_GITHUB_USERNAME }}:${{ secrets.GCP_GITHUB_TOKEN }}@github.com/smitalipatekarwohlig/gitops.git
+      #     cd gitops
+      #     git checkout main
+      #     git config --global user.name ${{secrets.GCP_GITHUB_USERNAME}}
+      #     git config --global user.email ${{secrets.GCP_GITHUB_EMAIL}}
+      #     yq e '.spec.template.spec.containers[0].image = "smitalipatekar/nodeappdemo:${{ env.GITHUB_BRANCH }}"' -i deployment.yaml
+      #     git add .
+      #     git commit -m "updating newer image"
+      #     git push origin main
