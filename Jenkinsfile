@@ -2,65 +2,71 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "smitalipatekar/sample-app"
+        GCP_PROJECT_ID = 'regal-hybrid-454111-r7'  // Your GCP Project ID
+        ARTIFACT_REGISTRY = 'asia-south1-docker.pkg.dev/regal-hybrid-454111-r7/docker-images'
+        IMAGE_NAME = 'register-app'
         IMAGE_TAG = "latest"
-        GIT_REPO = "https://github.com/smitalipatekarwohlig/gitops.git"
-        GIT_BRANCH = "main"
-        K8S_MANIFEST_PATH = "k8s/deployment.yaml"
-        ARGOCD_APP_NAME = "sample-app"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/smitalipatekarwohlig/demo-app.git'
+                script {
+                    // Remove the directory if it exists to prevent conflicts
+                    sh "rm -rf source-code"
+                    
+                    // Clone repo securely using GitHub Token
+                    withCredentials([string(credentialsId: 'GITHUB_TOKEN', variable: 'GITHUB_TOKEN')]) {
+                        sh "git clone https://$GITHUB_TOKEN@github.com/smitalipatekarwohlig/demo-app.git source-code"
+                    }
+
+                    // Checkout the main branch
+                    dir("source-code") {
+                        sh "git checkout main"
+                    }
+                }
+            }
+        }
+
+        stage('Authenticate with GCP') {
+            steps {
+                script {
+                    withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GCP_CREDENTIALS')]) {
+                        sh """
+                            gcloud auth activate-service-account --key-file=$GCP_CREDENTIALS
+                            gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+                        """
+                    }
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $DOCKER_IMAGE:$IMAGE_TAG ."
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
-                    sh "docker push $DOCKER_IMAGE:$IMAGE_TAG"
-                }
-            }
-        }
-
-        stage('Update Kubernetes Manifests') {
-            steps {
                 script {
                     sh """
-                    git clone $GIT_REPO argo-cd-repo
-                    cd argo-cd-repo
-                    sed -i '' 's|image: .*|image: $DOCKER_IMAGE:$IMAGE_TAG|' $K8S_MANIFEST_PATH
-                    git config --global user.email "jenkins@ci.com"
-                    git config --global user.name "Jenkins CI"
-                    git add $K8S_MANIFEST_PATH
-                    git commit -m "Updated image to $DOCKER_IMAGE:$IMAGE_TAG"
-                    git push origin $GIT_BRANCH
+                        cd source-code
+                        docker build -t $ARTIFACT_REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
                     """
                 }
             }
         }
 
-        stage('Argo CD Sync') {
+        stage('Push Docker Image to Artifact Registry') {
             steps {
-                sh "argocd app sync $ARGOCD_APP_NAME --grpc-web"
+                script {
+                    sh "docker push $ARTIFACT_REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Deployment successful! 🚀'
+            echo "✅ Deployment Successful!"
         }
         failure {
-            echo 'Pipeline failed! ❌'
+            echo "❌ Deployment Failed!"
         }
     }
 }
