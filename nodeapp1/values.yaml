@@ -1,9 +1,0 @@
-name: nodeapp1
-namespace: nodeapp
-configmap:
-  name: helmappconfigmapv1.1
-  data:
-    URL: ""
-image:
-  name: smitalipatekar/nodeappdemo
-  tag: latest
